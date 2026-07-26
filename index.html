@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Abastecimento — Viaturas (Google Sheets)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --bg:#1c1b1a;
+    --surface:#262320;
+    --surface-alt:#2f2b27;
+    --brand:#9e2b25;
+    --brand-light:#c33f34;
+    --amber:#e8a33d;
+    --green:#5c9a5c;
+    --text:#f2efe9;
+    --text-muted:#a79e93;
+    --border:#3a362f;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
+  .wrap{max-width:960px;margin:0 auto;padding:28px 20px 60px;}
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brand-light);margin:0 0 6px;}
+  h1{font-family:'Oswald',sans-serif;font-weight:700;font-size:32px;letter-spacing:.01em;margin:0 0 4px;text-transform:uppercase;}
+  .subtitle{color:var(--text-muted);font-size:14px;margin:0 0 28px;}
+  a{color:inherit;text-decoration:none;}
+  .top-actions{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;}
+  .btn{font-family:'Inter',sans-serif;font-weight:600;font-size:13px;padding:10px 16px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .btn:hover{border-color:var(--brand-light);}
+  .btn-primary{background:var(--brand);border-color:var(--brand);}
+  .btn-primary:hover{background:var(--brand-light);}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;cursor:pointer;transition:border-color .15s;}
+  .card:hover{border-color:var(--brand-light);}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+  .vtr-id{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:18px;}
+  .vtr-nome{color:var(--text-muted);font-size:13px;margin-top:2px;}
+  .gauge{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;}
+  .gauge-inner{width:42px;height:42px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;}
+  .card-stats{display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);}
+  .card-stats b{color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;display:block;margin-top:2px;}
+  .detail-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:24px;}
+  .back-link{font-size:13px;color:var(--text-muted);display:inline-flex;align-items:center;gap:6px;margin-bottom:14px;cursor:pointer;}
+  .back-link:hover{color:var(--text);}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px;margin-bottom:20px;}
+  .panel-title{font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:14px;letter-spacing:.06em;color:var(--text-muted);margin:0 0 16px;}
+  .saldo-row{display:flex;gap:28px;align-items:center;flex-wrap:wrap;}
+  .gauge-big{width:130px;height:130px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .gauge-big-inner{width:104px;height:104px;border-radius:50%;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .gauge-big-inner span{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:20px;}
+  .gauge-big-inner small{color:var(--text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+  .stat-block{min-width:120px;}
+  .stat-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);}
+  .stat-value{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:22px;margin-top:4px;}
+  form{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;align-items:end;}
+  label{font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px;}
+  input{width:100%;background:var(--surface-alt);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:14px;}
+  input:focus{outline:none;border-color:var(--brand-light);}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;color:var(--text-muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--border);}
+  td{padding:10px;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;}
+  tr:last-child td{border-bottom:none;}
+  .empty-state{color:var(--text-muted);font-size:13px;padding:20px 0;text-align:center;}
+  .qr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:20px;}
+  .qr-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;}
+  .qr-card canvas,.qr-card img{margin:0 auto;}
+  .qr-name{font-family:'JetBrains Mono',monospace;font-weight:700;margin-top:10px;font-size:14px;}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface-alt);border:1px solid var(--brand-light);color:var(--text);padding:12px 20px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;}
+  .toast.show{opacity:1;}
+  .name-edit{background:transparent;border:none;color:var(--text);font-family:'Oswald',sans-serif;font-size:22px;text-transform:uppercase;font-weight:700;border-bottom:1px dashed var(--border);padding:2px 0;width:auto;}
+  .config-warning{background:var(--surface-alt);border:1px solid var(--amber);color:var(--amber);padding:14px 18px;border-radius:8px;font-size:13px;margin-bottom:20px;}
+  @media print{.top-actions,.btn{display:none !important;}body{background:#fff;color:#000;}.qr-card{border:1px solid #000;}}
+</style>
+</head>
+<body>
+<div id="app" class="wrap"><div class="empty-state">Carregando…</div></div>
+<div id="toast" class="toast"></div>
+
+<script>
+// ==================================================================
+// CONFIGURAÇÃO — cole aqui a URL do seu Apps Script (App da Web)
+// Veja o guia de configuração para saber como gerar essa URL.
+// ==================================================================
+const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyWIA08S0uRfA1PkMAUS7sNYhF3-GnOSDITwd8WuhGuEIFBsj_XWqbnT-cRYN7FarFo/exec';
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+function urlConfigurada(){
+  return APP_SCRIPT_URL && APP_SCRIPT_URL.startsWith('https://script.google.com/');
+}
+
+// ---------- CHAMADAS À API (Google Apps Script) ----------
+async function apiGet(params){
+  const url = new URL(APP_SCRIPT_URL);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+  const res = await fetch(url.toString(), {method:'GET'});
+  if(!res.ok) throw new Error('Falha na requisição GET');
+  return res.json();
+}
+
+async function apiPost(body){
+  // Content-Type text/plain evita preflight CORS com Apps Script
+  const res = await fetch(APP_SCRIPT_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify(body)
+  });
+  if(!res.ok) throw new Error('Falha na requisição POST');
+  return res.json();
+}
+
+async function fetchViaturas(){
+  return apiGet({action:'viaturas'});
+}
+
+async function fetchHistorico(viaturaId){
+  const resp = await apiGet({action:'historico', viatura_id:viaturaId});
+  return resp.historico || [];
+}
+
+async function postAbastecimento(dados){
+  return apiPost({action:'addAbastecimento', ...dados});
+}
+
+async function postRenomear(viaturaId, nome){
+  return apiPost({action:'renomear', viatura_id:viaturaId, nome});
+}
+
+// ---------- HELPERS DE APRESENTAÇÃO ----------
+function corSaldo(restante, limite=500){
+  const pct = restante / limite;
+  if(pct > 0.5) return 'var(--green)';
+  if(pct > 0.2) return 'var(--amber)';
+  return 'var(--brand-light)';
+}
+function gaugeStyle(restante, size, limite=500){
+  const pct = Math.max(0, Math.min(1, restante / limite));
+  const cor = corSaldo(restante, limite);
+  const deg = pct * 360;
+  return `width:${size}px;height:${size}px;background:conic-gradient(${cor} ${deg}deg, var(--border) ${deg}deg);`;
+}
+function formatarData(iso){
+  const [ano,mes,dia] = iso.split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+function urlDaViatura(id){
+  return `${location.origin}${location.pathname}#/viatura/${id}`;
+}
+function avisoConfig(){
+  return `<div class="config-warning">⚠ Configure a URL do Apps Script na constante <code>APP_SCRIPT_URL</code> no início do arquivo antes de usar. Veja o guia de configuração.</div>`;
+}
+
+// ---------- ROTEAMENTO ----------
+window.addEventListener('hashchange', route);
+window.addEventListener('DOMContentLoaded', route);
+
+async function route(){
+  const hash = location.hash.slice(1) || '/';
+  if(hash === '/') await renderHome();
+  else if(hash.startsWith('/viatura/')) await renderDetail(decodeURIComponent(hash.split('/')[2]));
+  else if(hash === '/qrcodes') await renderQrPage();
+  else await renderHome();
+}
+
+// ---------- HOME ----------
+async function renderHome(){
+  const app = document.getElementById('app');
+  if(!urlConfigurada()){
+    app.innerHTML = `<p class="eyebrow">CBMPE · Grupamento</p><h1>Controle de Abastecimento</h1>${avisoConfig()}`;
+    return;
+  }
+  app.innerHTML = `<div class="empty-state">Carregando viaturas…</div>`;
+  try{
+    const viaturas = await fetchViaturas();
+    const cards = viaturas.map(v=>{
+      const restante = v.saldoRestante;
+      const pctLabel = Math.round(Math.max(0, restante)/500*100);
+      const kml = v.ultimoKml != null ? Number(v.ultimoKml).toFixed(1) : '—';
+      return `
+        <div class="card" onclick="location.hash='/viatura/${v.id}'">
+          <div class="card-top">
+            <div>
+              <div class="vtr-id">${v.id}</div>
+              <div class="vtr-nome">${v.nome}</div>
+            </div>
+            <div class="gauge" style="${gaugeStyle(restante,56)}">
+              <div class="gauge-inner">${pctLabel}%</div>
+            </div>
+          </div>
+          <div class="card-stats">
+            <div>Saldo<b>R$ ${restante.toFixed(2)}</b></div>
+            <div>Último km/L<b>${kml}</b></div>
+          </div>
+        </div>`;
+    });
+
+    app.innerHTML = `
+      <p class="eyebrow">CBMPE · Grupamento</p>
+      <h1>Controle de Abastecimento</h1>
+      <p class="subtitle">12 viaturas · limite de R$ 500,00 por mês, por viatura · dados no Google Sheets</p>
+      <div class="top-actions">
+        <button class="btn" onclick="location.hash='/qrcodes'">Ver QR Codes para impressão</button>
+      </div>
+      <div class="grid">${cards.join('')}</div>
+    `;
+  }catch(e){
+    app.innerHTML = `<div class="empty-state">Não foi possível carregar os dados. Verifique se a URL do Apps Script está correta e se o app foi implantado com acesso "Qualquer pessoa".</div>`;
+  }
+}
+
+// ---------- DETALHE ----------
+async function renderDetail(id){
+  const app = document.getElementById('app');
+  if(!urlConfigurada()){
+    app.innerHTML = avisoConfig();
+    return;
+  }
+  app.innerHTML = `<div class="empty-state">Carregando viatura…</div>`;
+  try{
+    const [viaturas, historico] = await Promise.all([fetchViaturas(), fetchHistorico(id)]);
+    const viatura = viaturas.find(v=>v.id === id);
+    if(!viatura){
+      app.innerHTML = `<div class="empty-state">Viatura não encontrada.</div><div class="back-link" onclick="location.hash='/'">&larr; Voltar</div>`;
+      return;
+    }
+    const restante = viatura.saldoRestante;
+    const gasto = viatura.gastoMes;
+    const kmlAtual = viatura.ultimoKml != null ? Number(viatura.ultimoKml).toFixed(1) + ' km/L' : '—';
+
+    const linhas = [...historico].reverse().map(h=>`
+      <tr>
+        <td>${formatarData(h.data)}</td>
+        <td>${Number(h.km).toLocaleString('pt-BR')} km</td>
+        <td>R$ ${Number(h.valorLitro).toFixed(3)}</td>
+        <td>R$ ${Number(h.valorPago).toFixed(2)}</td>
+        <td>${Number(h.litros).toFixed(2)} L</td>
+        <td>${h.kml != null ? Number(h.kml).toFixed(1) : '—'}</td>
+      </tr>`).join('');
+
+    app.innerHTML = `
+      <div class="back-link" onclick="location.hash='/'">&larr; Todas as viaturas</div>
+      <div class="detail-header">
+        <div>
+          <p class="eyebrow">${id}</p>
+          <input class="name-edit" id="nomeInput" value="${viatura.nome}" />
+        </div>
+      </div>
+
+      <div class="panel">
+        <p class="panel-title">Saldo do mês</p>
+        <div class="saldo-row">
+          <div class="gauge-big" style="${gaugeStyle(restante,130)}">
+            <div class="gauge-big-inner">
+              <span style="color:${corSaldo(restante)}">R$ ${restante.toFixed(2)}</span>
+              <small>restante</small>
+            </div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-label">Gasto no mês</div>
+            <div class="stat-value">R$ ${gasto.toFixed(2)}</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-label">Limite mensal</div>
+            <div class="stat-value">R$ 500.00</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-label">Último km/L</div>
+            <div class="stat-value">${kmlAtual}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <p class="panel-title">Novo abastecimento</p>
+        <form id="form-abastecimento">
+          <div>
+            <label>Data</label>
+            <input type="date" id="f-data" required value="${new Date().toISOString().slice(0,10)}">
+          </div>
+          <div>
+            <label>Km atual</label>
+            <input type="number" id="f-km" required min="0" step="1" placeholder="ex: 45210">
+          </div>
+          <div>
+            <label>Valor do litro (R$)</label>
+            <input type="number" id="f-valorLitro" required min="0" step="0.001" placeholder="ex: 6.29">
+          </div>
+          <div>
+            <label>Valor pago (R$)</label>
+            <input type="number" id="f-valorPago" required min="0" step="0.01" placeholder="ex: 150.00">
+          </div>
+          <button type="submit" class="btn btn-primary">Registrar abastecimento</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <p class="panel-title">Histórico</p>
+        ${historico.length === 0 ? '<div class="empty-state">Nenhum abastecimento registrado ainda.</div>' : `
+        <table>
+          <thead><tr><th>Data</th><th>Km</th><th>R$/L</th><th>Valor pago</th><th>Litros</th><th>Km/L</th></tr></thead>
+          <tbody>${linhas}</tbody>
+        </table>`}
+      </div>
+    `;
+
+    document.getElementById('nomeInput').addEventListener('change', async (e)=>{
+      const novoNome = e.target.value.trim() || viatura.nome;
+      try{
+        await postRenomear(id, novoNome);
+        showToast('Nome atualizado.');
+      }catch(err){
+        showToast('Erro ao atualizar nome.');
+      }
+    });
+
+    document.getElementById('form-abastecimento').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const data = document.getElementById('f-data').value;
+      const km = document.getElementById('f-km').value;
+      const valorLitro = document.getElementById('f-valorLitro').value;
+      const valorPago = document.getElementById('f-valorPago').value;
+      if(!data || !km || !valorLitro || !valorPago){
+        showToast('Preencha todos os campos.');
+        return;
+      }
+      try{
+        const resp = await postAbastecimento({
+          viatura_id: id, data, km, valor_litro: valorLitro, valor_pago: valorPago
+        });
+        if(resp.erro){
+          showToast(resp.erro);
+          return;
+        }
+        showToast('Abastecimento registrado.');
+        renderDetail(id);
+      }catch(err){
+        showToast('Erro ao registrar abastecimento.');
+      }
+    });
+  }catch(e){
+    app.innerHTML = `<div class="empty-state">Não foi possível carregar os dados desta viatura.</div><div class="back-link" onclick="location.hash='/'">&larr; Voltar</div>`;
+  }
+}
+
+// ---------- QR CODES ----------
+async function renderQrPage(){
+  const app = document.getElementById('app');
+  if(!urlConfigurada()){
+    app.innerHTML = avisoConfig();
+    return;
+  }
+  app.innerHTML = `<div class="empty-state">Carregando viaturas…</div>`;
+  try{
+    const viaturas = await fetchViaturas();
+    app.innerHTML = `
+      <div class="back-link" onclick="location.hash='/'">&larr; Todas as viaturas</div>
+      <p class="eyebrow">Impressão</p>
+      <h1>QR Codes das Viaturas</h1>
+      <p class="subtitle">Cole cada QR Code na respectiva viatura. Ao escanear, o motorista cai direto na tela de abastecimento daquele carro.</p>
+      <div class="top-actions">
+        <button class="btn btn-primary" onclick="window.print()">Imprimir esta página</button>
+      </div>
+      <div class="qr-grid" id="qr-grid"></div>
+    `;
+    const grid = document.getElementById('qr-grid');
+    viaturas.forEach(v=>{
+      const card = document.createElement('div');
+      card.className = 'qr-card';
+      const qrHolder = document.createElement('div');
+      card.appendChild(qrHolder);
+      const label = document.createElement('div');
+      label.className = 'qr-name';
+      label.textContent = `${v.id} — ${v.nome}`;
+      card.appendChild(label);
+      grid.appendChild(card);
+      try{
+        new QRCode(qrHolder, {text: urlDaViatura(v.id), width:130, height:130, colorDark:'#1c1b1a', colorLight:'#ffffff'});
+      }catch(e){
+        qrHolder.textContent = 'Erro ao gerar QR Code';
+      }
+    });
+  }catch(e){
+    app.innerHTML = `<div class="empty-state">Não foi possível carregar as viaturas.</div>`;
+  }
+}
+</script>
+</body>
+</html>
