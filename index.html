@@ -243,6 +243,7 @@ async function renderDetail(id){
         <td>R$ ${Number(h.valorPago).toFixed(2)}</td>
         <td>${Number(h.litros).toFixed(2)} L</td>
         <td>${h.kml != null ? Number(h.kml).toFixed(1) : '—'}</td>
+        <td>${h.militar || '—'}</td>
       </tr>`).join('');
 
     app.innerHTML = `
@@ -282,6 +283,10 @@ async function renderDetail(id){
         <p class="panel-title">Novo abastecimento</p>
         <form id="form-abastecimento">
           <div>
+            <label>Nome de guerra</label>
+            <input type="text" id="f-militar" required placeholder="ex: Silva" style="font-family:'Inter',sans-serif;">
+          </div>
+          <div>
             <label>Data</label>
             <input type="date" id="f-data" required value="${new Date().toISOString().slice(0,10)}">
           </div>
@@ -305,7 +310,7 @@ async function renderDetail(id){
         <p class="panel-title">Histórico</p>
         ${historico.length === 0 ? '<div class="empty-state">Nenhum abastecimento registrado ainda.</div>' : `
         <table>
-          <thead><tr><th>Data</th><th>Km</th><th>R$/L</th><th>Valor pago</th><th>Litros</th><th>Km/L</th></tr></thead>
+          <thead><tr><th>Data</th><th>Km</th><th>R$/L</th><th>Valor pago</th><th>Litros</th><th>Km/L</th><th>Militar</th></tr></thead>
           <tbody>${linhas}</tbody>
         </table>`}
       </div>
@@ -323,17 +328,18 @@ async function renderDetail(id){
 
     document.getElementById('form-abastecimento').addEventListener('submit', async (e)=>{
       e.preventDefault();
+      const militar = document.getElementById('f-militar').value.trim();
       const data = document.getElementById('f-data').value;
       const km = document.getElementById('f-km').value;
       const valorLitro = document.getElementById('f-valorLitro').value;
       const valorPago = document.getElementById('f-valorPago').value;
-      if(!data || !km || !valorLitro || !valorPago){
+      if(!militar || !data || !km || !valorLitro || !valorPago){
         showToast('Preencha todos os campos.');
         return;
       }
       try{
         const resp = await postAbastecimento({
-          viatura_id: id, data, km, valor_litro: valorLitro, valor_pago: valorPago
+          viatura_id: id, data, km, valor_litro: valorLitro, valor_pago: valorPago, militar
         });
         if(resp.erro){
           showToast(resp.erro);
